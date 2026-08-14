@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knog Cobber Controller</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #14161a; --muted: #5d6673;
+    --line: #dfe3e8; --accent: #c4362f; --accent-soft: #f6e3e1;
+    --ok: #1f7a4d; --warn: #8a6100; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a; --panel: #1c1f25; --ink: #e8eaee; --muted: #98a1ae;
+      --line: #2c313a; --accent: #ff6b5e; --accent-soft: #3a221f;
+      --ok: #56c98c; --warn: #d9a441;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a; --panel: #1c1f25; --ink: #e8eaee; --muted: #98a1ae;
+    --line: #2c313a; --accent: #ff6b5e; --accent-soft: #3a221f;
+    --ok: #56c98c; --warn: #d9a441;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 80px; }
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 21px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .badge {
+    font-size: 12px; padding: 3px 9px; border-radius: 99px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; margin-top: 18px;
+  }
+  button {
+    font: inherit; font-weight: 550; padding: 9px 16px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .status { font-size: 14px; color: var(--muted); }
+  .status.err { color: var(--accent); }
+  .status.ok { color: var(--ok); }
+  dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; margin: 0; }
+  dl.meta dt { color: var(--muted); font-size: 13px; }
+  dl.meta dd { margin: 0; font-family: var(--mono); font-size: 13px; }
+  .mode { border-top: 1px solid var(--line); padding: 16px 0; }
+  .mode:first-of-type { border-top: 0; }
+  .mode h3 { margin: 0 0 4px; font-size: 15px; }
+  .mode .hint { color: var(--muted); font-size: 13px; font-family: var(--mono); }
+  .lamp {
+    width: 100%; height: 46px; border-radius: 8px; margin: 10px 0;
+    background: #0b0c0e; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .seg {
+    width: 16%; height: 22px; border-radius: 4px; background: #26282d;
+    transition: background 40ms linear, box-shadow 40ms linear;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  td.mono, th.mono { font-family: var(--mono); }
+  .scroll { overflow-x: auto; }
+  .note {
+    font-size: 13px; color: var(--muted); border-left: 3px solid var(--line);
+    padding-left: 12px; margin-top: 14px;
+  }
+  .warn-box {
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 12px 14px; font-size: 13.5px; margin-top: 16px;
+  }
+  input[type=range] { width: 130px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Knog Cobber Controller</h1>
+  <span class="badge">read-only</span>
+</header>
+<p class="sub">
+  Reads flash patterns straight off a Cobber Mini over WebHID and animates them.
+  This page never writes to the light &mdash; it only issues the RNVM read command.
+</p>
+
+<div class="panel">
+  <div class="row">
+    <button id="connect" class="primary">Connect light</button>
+    <button id="load" >Load backup JSON</button>
+    <input id="file" type="file" accept="application/json" hidden>
+    <span id="status" class="status">Not connected.</span>
+  </div>
+  <div class="warn-box" id="compat" hidden>
+    This browser has no WebHID support. Use Chrome, Edge, or another
+    Chromium browser &mdash; or load a backup JSON produced by
+    <code>python -m knog backup</code>.
+  </div>
+</div>
+
+<div class="panel" id="devicePanel" hidden>
+  <dl class="meta" id="deviceMeta"></dl>
+</div>
+
+<div class="panel" id="modePanel" hidden>
+  <div class="row" style="justify-content: space-between">
+    <strong id="modeCount"></strong>
+    <button id="playAll">Play all</button>
+  </div>
+  <div id="modes"></div>
+</div>
+
+<p class="note">
+  Step bytes decode as <code>bits 7-5</code> brightness, <code>bit 4</code> delay
+  selector, <code>bits 3-0</code> channels 1-4. Timings are the light's own delay
+  units, shown here as milliseconds; the true unit is unconfirmed, so the preview
+  speed is indicative rather than exact.
+</p>
+
+</div>
+
+<script>
+"use strict";
+
+const VID = 0x10C4, PID = 0xEAC9;
+const NEWCOMMAND = 0x24, CMD_RNVM = 0x38, ERASED = 0xFF, MAX_MODES = 8;
+
+const MEM = {
+  productId: 0xFB40,
+  firmwareVersion: 0xFB81,
+  serial: [0xFB41, 0xFB44],
+  deviceInfo: [0xFB72, 0xFB76],
+  lightModes: [0xF801, 0xF809],
+  delays: [0xF80A, 0xF819],
+  statusBytes: [0xF81A, 0xF821],
+  stepData: [0xF840, 0xF93F],
+};
+
+const PRODUCTS = {
+  4: ["Cobber Mini Front (Cobber Front (Small))", 2],
+  5: ["Cobber Front (Med)", 3], 6: ["Cobber Front (Large)", 3],
+  7: ["Cobber Mini Rear (Cobber Rear (Small))", 3],
+  8: ["Cobber Rear (Medium)", 3], 9: ["Cobber Rear (Large)", 3],
+  43: ["Cobber Rear (Small StVZO)", 3], 254: ["Default/Unknown", 4],
+};
+
+const $ = (id) => document.getElementById(id);
+const statusEl = $("status");
+
+function setStatus(msg, kind) {
+  statusEl.textContent = msg;
+  statusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+if (!("hid" in navigator)) {
+  $("compat").hidden = false;
+  $("connect").disabled = true;
+}
+
+// --- device I/O -------------------------------------------------------------
+
+let device = null;
+
+/** Read one byte of device memory via RNVM. Resolves to the byte value. */
+function readByte(dev, address) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      dev.removeEventListener("inputreport", onReport);
+      reject(new Error(`timeout reading 0x${address.toString(16)}`));
+    }, 800);
+
+    function onReport(event) {
+      clearTimeout(timer);
+      dev.removeEventListener("inputreport", onReport);
+      resolve(event.data.getUint8(0));
+    }
+    dev.addEventListener("inputreport", onReport);
+
+    const payload = new Uint8Array([
+      NEWCOMMAND, 0x04, CMD_RNVM, (address >> 8) & 0xFF, address & 0xFF, 0x01,
+    ]);
+    dev.sendReport(0x00, payload).catch((err) => {
+      clearTimeout(timer);
+      dev.removeEventListener("inputreport", onReport);
+      reject(err);
+    });
+  });
+}
+
+async function readRange(dev, [start, end], onProgress) {
+  const out = [];
+  for (let a = start; a <= end; a++) {
+    out.push(await readByte(dev, a));
+    if (onProgress && (a - start) % 16 === 0) onProgress(a - start, end - start);
+  }
+  return out;
+}
+
+async function connect() {
+  try {
+    const devices = await navigator.hid.requestDevice({
+      filters: [{ vendorId: VID, productId: PID }],
+    });
+    if (!devices.length) { setStatus("No device chosen.", "err"); return; }
+    device = devices[0];
+    if (!device.opened) await device.open();
+    setStatus("Connected. Reading…");
+    await readAll();
+  } catch (err) {
+    setStatus("Connect failed: " + err.message, "err");
+  }
+}
+
+async function readAll() {
+  const prodcode = await readByte(device, MEM.productId);
+  const firmware = await readByte(device, MEM.firmwareVersion);
+  const serial = await readRange(device, MEM.serial);
+  const info = await readRange(device, MEM.deviceInfo);
+  const lightModes = await readRange(device, MEM.lightModes);
+  const delays = await readRange(device, MEM.delays);
+  const statusBytes = await readRange(device, MEM.statusBytes);
+  setStatus("Reading pattern data…");
+  const stepData = await readRange(device, MEM.stepData, (done, total) => {
+    setStatus(`Reading pattern data… ${done}/${total + 1}`);
+  });
+
+  render({
+    device: {
+      prodcode,
+      name: (PRODUCTS[prodcode] || ["Unknown product " + prodcode, 0])[0],
+      channels: (PRODUCTS[prodcode] || [null, 0])[1],
+      firmware_version: firmware,
+      bootloader_version: info[0],
+      factory_id: info[1],
+      serial: serial.join(""),
+    },
+    regions: {
+      LightModes: { bytes: lightModes },
+      Delays: { bytes: delays },
+      StatusBytes: { bytes: statusBytes },
+      StepData: { bytes: stepData },
+    },
+  });
+  setStatus("Read complete. Nothing was written.", "ok");
+}
+
+// --- decoding ---------------------------------------------------------------
+
+function decodeStep(byte) {
+  const channels = [];
+  if ((byte >> 3) & 1) channels.push(1);
+  if ((byte >> 2) & 1) channels.push(2);
+  if ((byte >> 1) & 1) channels.push(3);
+  if (byte & 1) channels.push(4);
+  return {
+    raw: byte,
+    brightness: (byte >> 5) & 0x07,
+    delay: (byte >> 4) & 0x01,
+    channels,
+  };
+}
+
+/** Split StepData into modes using LightModes as cumulative offsets. */
+function decodeModes(backup) {
+  const reg = (n) => (backup.regions[n] ? backup.regions[n].bytes : []);
+  const offsets = reg("LightModes");
+  const stepData = reg("StepData");
+  const delays = reg("Delays");
+  const statusBytes = reg("StatusBytes");
+
+  const modes = [];
+  for (let i = 0; i < MAX_MODES; i++) {
+    const start = offsets[i], end = offsets[i + 1];
+    const steps = [];
+    if (start !== undefined && end !== undefined &&
+        start !== ERASED && end !== ERASED && end > start) {
+      for (const byte of stepData.slice(start, end)) {
+        if (byte === ERASED) break;
+        steps.push(decodeStep(byte));
+      }
+    }
+    const lo = delays[2 * i], hi = delays[2 * i + 1];
+    modes.push({
+      index: i + 1,
+      steps,
+      delays: lo !== undefined && lo !== ERASED ? [lo, hi] : null,
+      status: statusBytes[i],
+    });
+  }
+  return modes;
+}
+
+// --- rendering --------------------------------------------------------------
+
+let currentChannels = 3;
+const players = [];
+
+function render(backup) {
+  const d = backup.device;
+  currentChannels = d.channels || 3;
+
+  $("deviceMeta").innerHTML = `
+    <dt>model</dt><dd>${esc(d.name)}</dd>
+    <dt>prodcode</dt><dd>${d.prodcode}</dd>
+    <dt>channels</dt><dd>${d.channels}</dd>
+    <dt>firmware</dt><dd>${d.firmware_version}</dd>
+    <dt>bootloader</dt><dd>${d.bootloader_version ?? "-"}</dd>
+    <dt>serial</dt><dd>${esc(d.serial ?? "-")}</dd>`;
+  $("devicePanel").hidden = false;
+
+  const modes = decodeModes(backup);
+  const active = modes.filter((m) => m.steps.length);
+  $("modeCount").textContent =
+    `${active.length} of ${MAX_MODES} mode slots programmed`;
+
+  stopAll();
+  const host = $("modes");
+  host.innerHTML = "";
+  for (const mode of active) host.appendChild(renderMode(mode));
+  const empty = modes.filter((m) => !m.steps.length).map((m) => m.index);
+  if (empty.length) {
+    const p = document.createElement("p");
+    p.className = "hint";
+    p.style.marginTop = "14px";
+    p.textContent = "empty slots: " + empty.join(", ");
+    host.appendChild(p);
+  }
+  $("modePanel").hidden = false;
+}
+
+function renderMode(mode) {
+  const el = document.createElement("div");
+  el.className = "mode";
+
+  const delayText = mode.delays
+    ? `delays short=${mode.delays[0]} long=${mode.delays[1]}`
+    : "delays unset";
+
+  const segs = Array.from({ length: currentChannels },
+    (_, i) => `<div class="seg" data-ch="${i + 1}"></div>`).join("");
+
+  el.innerHTML = `
+    <h3>Mode ${mode.index}</h3>
+    <div class="hint">${mode.steps.length} steps &middot; ${delayText}` +
+    (mode.status !== undefined && mode.status !== ERASED
+      ? ` &middot; status 0x${mode.status.toString(16).padStart(2, "0").toUpperCase()}` : "") +
+    `</div>
+    <div class="lamp">${segs}</div>
+    <div class="row">
+      <button data-act="play">Play</button>
+      <label class="hint">speed
+        <input type="range" min="0.25" max="3" step="0.25" value="1" data-act="speed">
+        <span data-act="speedval">1x</span>
+      </label>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>#</th><th class="mono">byte</th><th>brightness</th>
+        <th>delay</th><th>channels</th>
+      </tr></thead>
+      <tbody>${mode.steps.map((s, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="mono">0x${s.raw.toString(16).padStart(2, "0").toUpperCase()}</td>
+          <td>${s.brightness}/7</td>
+          <td>${mode.delays ? mode.delays[s.delay] : s.delay}</td>
+          <td>${s.channels.length ? s.channels.join(", ") : "none"}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+
+  const lamp = el.querySelector(".lamp");
+  const speed = el.querySelector('[data-act="speed"]');
+  const speedVal = el.querySelector('[data-act="speedval"]');
+  const playBtn = el.querySelector('[data-act="play"]');
+
+  const player = makePlayer(mode, lamp, () => parseFloat(speed.value));
+  players.push(player);
+
+  speed.addEventListener("input", () => { speedVal.textContent = speed.value + "x"; });
+  playBtn.addEventListener("click", () => {
+    if (player.running) { player.stop(); playBtn.textContent = "Play"; }
+    else { player.start(); playBtn.textContent = "Stop"; }
+  });
+  return el;
+}
+
+/** Animate a mode's pattern across the lamp segments. */
+function makePlayer(mode, lamp, speedFn) {
+  const segs = [...lamp.querySelectorAll(".seg")];
+  let timer = null, i = 0;
+  const api = {
+    running: false,
+    start() {
+      if (api.running) return;
+      api.running = true;
+      i = 0;
+      tick();
+    },
+    stop() {
+      api.running = false;
+      clearTimeout(timer);
+      segs.forEach((s) => { s.style.background = "#26282d"; s.style.boxShadow = "none"; });
+    },
+  };
+
+  function tick() {
+    if (!api.running || !mode.steps.length) return;
+    const step = mode.steps[i % mode.steps.length];
+    const level = step.brightness / 7;
+    segs.forEach((seg) => {
+      const ch = Number(seg.dataset.ch);
+      if (step.channels.includes(ch) && level > 0) {
+        const alpha = 0.25 + 0.75 * level;
+        seg.style.background = `rgba(255,${Math.round(70 + 40 * level)},60,${alpha})`;
+        seg.style.boxShadow = `0 0 ${Math.round(16 * level)}px rgba(255,90,60,${level})`;
+      } else if (step.channels.includes(ch)) {
+        seg.style.background = "rgba(255,90,60,0.14)";
+        seg.style.boxShadow = "none";
+      } else {
+        seg.style.background = "#26282d";
+        seg.style.boxShadow = "none";
+      }
+    });
+    const units = mode.delays ? mode.delays[step.delay] : 60;
+    i++;
+    timer = setTimeout(tick, Math.max(16, units / speedFn()));
+  }
+  return api;
+}
+
+function stopAll() {
+  players.forEach((p) => p.stop());
+  players.length = 0;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+// --- wiring -----------------------------------------------------------------
+
+$("connect").addEventListener("click", connect);
+$("load").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    render(JSON.parse(await file.text()));
+    setStatus("Loaded " + file.name, "ok");
+  } catch (err) {
+    setStatus("Could not read that file: " + err.message, "err");
+  }
+});
+$("playAll").addEventListener("click", () => {
+  const anyRunning = players.some((p) => p.running);
+  if (anyRunning) { stopAllKeepList(); }
+  else players.forEach((p) => p.start());
+  $("playAll").textContent = anyRunning ? "Play all" : "Stop all";
+});
+function stopAllKeepList() { players.forEach((p) => p.stop()); }
+</script>
+</body>
+</html>

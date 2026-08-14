@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Your device's saved settings - contains your serial number
+backups/
+
+# Knog's own application source, extracted locally for protocol work.
+# Their copyright - do not redistribute. docs/PROTOCOL.md captures the
+# findings independently.
+docs/modemaker-src/
+docs/modemaker-bundle.js
+
+.DS_Store

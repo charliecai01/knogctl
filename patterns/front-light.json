@@ -1,0 +1,97 @@
+{
+  "_comment": [
+    "PROPOSAL - not written to any device. PROVISIONAL: the front light has",
+    "not been connected yet, so channel behaviour is unverified.",
+    "Cobber Mini Front (prodcode 4) used as an actual front light.",
+    "Reasoning: docs/PATTERN-DESIGN.md"
+  ],
+  "design": {
+    "status": "proposal - unverified against hardware",
+    "target": "Cobber Mini Front (prodcode 4), forward-facing",
+    "why_the_front_differs_from_the_rear": [
+      "The rear crash mode is failure to DETECT you; attention capture wins.",
+      "The front crash mode is failure to JUDGE YOUR APPROACH SPEED - a driver",
+      "pulling out of a side road or turning across you is making a gap",
+      "acceptance decision. Drivers read position, speed and direction from",
+      "STEADY light; flashing degrades exactly the cue they need.",
+      "A bicycle's narrow frontal profile already gives poor speed cues, so",
+      "the steady component carries more weight here than at the rear."
+    ],
+    "delay_unit_ms": "UNCONFIRMED - assumed ~2.6ms; calibrate before trusting rates"
+  },
+  "device": {
+    "prodcode": 4,
+    "name": "Cobber Mini Front (Cobber Front (Small))",
+    "channels": 2
+  },
+  "modes": [
+    {
+      "index": 1,
+      "name": "Approach",
+      "purpose": "default daylight mode - detection plus a floor drivers can range against",
+      "delays": { "short": 20, "long": 180 },
+      "peak_duty_pct": 17,
+      "est_runtime_hr": "3.5-4",
+      "steps": [
+        { "byte": "0xEC", "brightness": 7, "delay": "short", "channels": [1,2], "note": "flash A, full 120 lm - initial detection" },
+        { "byte": "0x2C", "brightness": 1, "delay": "short", "channels": [1,2], "note": "dip - never fully dark" },
+        { "byte": "0xEC", "brightness": 7, "delay": "short", "channels": [1,2], "note": "flash B - doublet" },
+        { "byte": "0x5C", "brightness": 2, "delay": "long",  "channels": [1,2], "note": "floor deliberately a step above the rear design - this is the gap-acceptance cue" }
+      ]
+    },
+    {
+      "index": 2,
+      "name": "Dawn Steady",
+      "purpose": "dark or twilight opening of a winter ride; switch to mode 1 once it is light",
+      "delays": { "short": 150, "long": 150 },
+      "est_runtime_hr": "~2",
+      "note": [
+        "Deliberately NOT flashing. Front lights are commonly required to be",
+        "steady after dark, flashing wrecks your own dark adaptation, and it",
+        "removes the speed cue precisely when drivers most need it.",
+        "2 hr is ample - this covers a dark first hour, not a whole session."
+      ],
+      "steps": [
+        { "byte": "0xBC", "brightness": 5, "delay": "long", "channels": [1,2], "note": "constant ~85 lm, matching factory HIGH" }
+      ]
+    }
+  ],
+  "regions": {
+    "LightModes": {
+      "start": 63489, "end": 63497,
+      "bytes": [0, 4, 5, 5, 5, 5, 5, 5, 5]
+    },
+    "Delays": {
+      "start": 63498, "end": 63513,
+      "bytes": [20, 180, 150, 150, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+    },
+    "StatusBytes": {
+      "start": 63514, "end": 63521,
+      "bytes": [3, 3, 255, 255, 255, 255, 255, 255]
+    },
+    "Buttons": {
+      "start": 63522, "end": 63527,
+      "bytes": [2, 7, 7, 255, 255, 255]
+    },
+    "StepData": {
+      "start": 63552, "end": 63807,
+      "_note": "EC 2C EC 5C = mode 1; BC = mode 2",
+      "bytes": [236, 44, 236, 92, 188, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+    }
+  }
+}
