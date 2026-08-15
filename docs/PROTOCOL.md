@@ -1,8 +1,12 @@
 # Knog Cobber Mini — protocol notes
 
-Reverse-engineered from Knog's own Modemaker desktop app (Electron, v1.9.96),
-whose unminified source is preserved in `modemaker-src/`. **Confirmed against
-real hardware** — see "Verified device readout" below.
+Reverse-engineered from Knog's own Modemaker desktop app (Electron, v1.9.96)
+and **confirmed against real hardware** on two models — see "Verified models".
+
+The app's own source is not redistributed here (it is Knog's copyright). To
+reproduce this work, install Modemaker 1.x, expand the `.pkg`, and extract
+`Contents/Resources/app.asar`; the protocol lives in `assets/mmdevice.js`,
+`assets/KnogDevice.js` and `assets/KnogDeviceMemoryMap.js`.
 
 ## Which app, which transport — read this first
 
@@ -148,8 +152,26 @@ Products whose `prodcode` is absent from the catalog fall back to `254`
 `channels` is how many independently addressable LED banks the model has —
 3 for the Cobber Mini Rear.
 
+## Verified models
+
+| prodcode | model | channels | `StatusBytes` base | factory modes |
+|---|---|---|---|---|
+| 7 | Cobber Mini Rear | 3 (ch1-4 at peak) | `0x03` | 2 |
+| 4 | Cobber Mini Front | 2 (ch1, ch2 only) | `0x01` | 3 |
+
+Both firmware 3, bootloader 4. The memory map and command set are identical;
+the differences above are per-model conventions, not protocol differences.
+The `StatusBytes` base in particular must be taken from the target light's own
+backup — bit 1 (`Aux on`) is set on the rear and clear on the front.
+
 ## Still to determine
 
-- Encoding of the 9 `LightModes` bytes and 16 `Delays` bytes
-- Flash-pattern storage layout (see `DeviceMode.js`, `ModeControl.js`)
-- Exact `WNVM` / `Erase` argument layout for the write path
+- **The delay unit.** Timings are unitless in firmware; all rates here are
+  relative. Needs a stopwatch against a known pattern.
+- **Where the remaining factory modes live.** The Cobber Mini Front is sold as
+  5 modes but exposes only 3 in the settings region, none at full brightness.
+- **`StatusBytes` bits beyond 0-4.** Bit 5 (`Alternate Mode`) and bits 6-7
+  (dimming T1/T2/T3) are documented in Knog's source but untested.
+- **Whether `Status LED 1/2` bits drive the button LED** as the source comment
+  implies.
+- Memory map versions 2 and 3, used by newer models (Bandicoot 250, Bilby).

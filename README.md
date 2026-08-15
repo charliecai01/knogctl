@@ -36,9 +36,25 @@ device `0x10C4:0xEAC9`:
 *Modemaker 2.0* generation and use a completely different WebUSB protocol with
 different USB product IDs. See [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
-Verified end-to-end on a **Cobber Mini Rear (prodcode 7, firmware 3)**. Other
-models in the table share the protocol and memory map but are untested — see
+Verified end-to-end on **two models** — Cobber Mini **Rear** (prodcode 7) and
+Cobber Mini **Front** (prodcode 4), both firmware 3. Reads, backup, write and
+read-back verification all confirmed on each. Other models in the table share
+the protocol and memory map but are untested — see
 [Drawbacks](#drawbacks-and-known-limitations).
+
+### Per-model differences worth knowing
+
+Two lights of the same generation are not identical, and assuming they are will
+bite you:
+
+| | Cobber Mini Rear (7) | Cobber Mini Front (4) |
+|---|---|---|
+| LED channels | 3 (uses ch1-4 at peak) | 2 (only ch1, ch2) |
+| `StatusBytes` base | `0x03` | `0x01` |
+| Factory modes | 2 | 3 |
+
+**Always read a light before writing to it.** Copy `StatusBytes` conventions
+from that light's own backup, not from another model.
 
 ---
 
@@ -243,9 +259,12 @@ generation. That's what this tool is for.
 
 Being honest about what this doesn't do:
 
-- **Only verified on a Cobber Mini Rear (prodcode 7).** Everything else in the
-  support table shares the documented protocol but is untested on real hardware.
-  Reads are safe to try; back up before writing.
+- **Only verified on the Cobber Mini Front and Rear (prodcodes 4 and 7).**
+  Everything else in the support table shares the documented protocol but is
+  untested on real hardware. Reads are safe to try; back up before writing.
+- **Some factory modes may live outside the editable region.** The Cobber Mini
+  Front is sold as 5 modes but exposes only 3 in the settings area, none at full
+  brightness. Where the others live is not yet known.
 - **The delay unit is unknown.** Timing values are unitless in the firmware. All
   timings are relative, and stated flash rates are estimates. Time a known
   pattern with a stopwatch to calibrate for your model.
