@@ -221,8 +221,8 @@ Included patterns:
 
 | File | For |
 |---|---|
-| `patterns/dawn-patrol.json` | Cobber Mini **Rear** — daylight commuting, two modes |
-| `patterns/front-light.json` | Cobber Mini **Front** — daylight, plus a steady low-light mode |
+| `patterns/dawn-patrol.json` | Cobber Mini **Rear** — daylight commuting, plus a steady no-flash Peloton mode for group riding |
+| `patterns/front-light.json` | Cobber Mini **Front** — daylight, a steady low-light mode, a dimmed rear-facing fallback, and a steady no-flash Peloton mode |
 
 [docs/PATTERN-DESIGN.md](docs/PATTERN-DESIGN.md) explains the reasoning, with
 citations — daytime running lights cut crashes ~33%, flashing is detected ~3×

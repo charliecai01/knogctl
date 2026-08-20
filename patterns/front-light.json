@@ -68,6 +68,20 @@
         "0x8C flash B 4/7",
         "0x3C floor 1/7"
       ]
+    },
+    {
+      "index": 4,
+      "name": "Peloton",
+      "purpose": "group riding, this light facing REARWARD - steady and dim",
+      "delays": {
+        "short": 150,
+        "long": 150
+      },
+      "est_runtime_hr": "8+",
+      "status": "0x01",
+      "steps": [
+        "0x3C constant 1/7 (~17 lm) on ch1+ch2 - spread lowers glare"
+      ]
     }
   ],
   "regions": {
@@ -80,11 +94,11 @@
         4,
         5,
         9,
-        9,
-        9,
-        9,
-        9,
-        9
+        10,
+        10,
+        10,
+        10,
+        10
       ]
     },
     "Delays": {
@@ -98,8 +112,8 @@
         150,
         20,
         200,
-        255,
-        255,
+        150,
+        150,
         255,
         255,
         255,
@@ -118,7 +132,7 @@
         9,
         17,
         25,
-        255,
+        1,
         255,
         255,
         255,
@@ -141,7 +155,7 @@
     "StepData": {
       "start": 63552,
       "end": 63807,
-      "_note": "EC 2C EC 5C | BC | 8C 2C 8C 3C",
+      "_note": "EC 2C EC 5C | BC | 8C 2C 8C 3C | 3C",
       "bytes": [
         236,
         44,
@@ -152,7 +166,7 @@
         44,
         140,
         60,
-        255,
+        60,
         255,
         255,
         255,

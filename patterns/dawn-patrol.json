@@ -6,7 +6,7 @@
     "Reasoning: docs/PATTERN-DESIGN.md"
   ],
   "design": {
-    "status": "proposal - awaiting review",
+    "status": "written to hardware",
     "target": "Cobber Mini Rear (prodcode 7)",
     "delay_unit_ms": "UNCONFIRMED - assumed ~2.6ms; calibrate before trusting rates",
     "modes": {
@@ -171,6 +171,30 @@
           "note": "raised floor, shortened so mode 2 reads as urgent"
         }
       ]
+    },
+    {
+      "index": 3,
+      "name": "Peloton",
+      "purpose": "group riding - steady and dim so you do not dazzle the rider on your wheel",
+      "delays": {
+        "short": 150,
+        "long": 150
+      },
+      "est_runtime_hr": "8+",
+      "status": "0x1B",
+      "steps": [
+        {
+          "byte": "0x3E",
+          "brightness": 1,
+          "delay": "long",
+          "channels": [
+            1,
+            2,
+            3
+          ],
+          "note": "constant, lowest non-zero brightness, spread over all 3 channels"
+        }
+      ]
     }
   ],
   "regions": {
@@ -182,12 +206,12 @@
         0,
         4,
         10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        10
+        11,
+        11,
+        11,
+        11,
+        11,
+        11
       ]
     },
     "Delays": {
@@ -199,8 +223,8 @@
         150,
         20,
         70,
-        255,
-        255,
+        150,
+        150,
         255,
         255,
         255,
@@ -220,7 +244,7 @@
       "bytes": [
         11,
         19,
-        255,
+        27,
         255,
         255,
         255,
@@ -244,7 +268,7 @@
     "StepData": {
       "start": 63552,
       "end": 63807,
-      "_note": "EF 2E EF 5E = mode 1; EF 2E EF 2E EF 7E = mode 2; rest erased",
+      "_note": "EF 2E EF 5E | EF 2E EF 2E EF 7E | 3E",
       "bytes": [
         239,
         46,
@@ -256,7 +280,7 @@
         46,
         239,
         126,
-        255,
+        62,
         255,
         255,
         255,
