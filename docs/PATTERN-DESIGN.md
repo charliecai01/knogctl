@@ -46,17 +46,21 @@ mode does not.
 
 ```
 Mode 1 "Dawn Patrol"
-  0xEF  brightness 7/7  ch 1-4   short (10)   flash A
-  0x2E  brightness 1/7  ch 1-3   short (10)   dip - never fully dark
-  0xEF  brightness 7/7  ch 1-4   short (10)   flash B
-  0x5E  brightness 2/7  ch 1-3   long (150)   steady floor
+  0xEF  brightness 7/7  ch 1-4   short (20)   flash A
+  0x2E  brightness 1/7  ch 1-3   short (20)   dip - never fully dark
+  0xEF  brightness 7/7  ch 1-4   short (20)   flash B
+  0x3E  brightness 1/7  ch 1-3   long (250)   steady floor
 ```
+
+The first version used a brightness 2 floor and a long delay of 150. It died
+after about 2 hours on a 27 °C ride, so both were cut back for runtime (see
+[Runtime](#runtime)).
 
 Three deliberate choices:
 
 - **A doublet, not a single flash.** Grouped, irregular flashes read as more
   urgent than a metronomic blink and hold attention better once captured.
-- **The floor never reaches zero.** Brightness 2 between doublets is the
+- **The floor never reaches zero.** Brightness 1 between doublets is the
   "steady light" half of the recommended pairing, so there is always something
   to range against. It also means the light reads as a steady lamp with pulses
   rather than a pure flasher, which matters where pure flashing rear lights are
@@ -67,8 +71,9 @@ Three deliberate choices:
   full-output configuration even though the catalog lists this model as
   3-channel.
 
-`Mode 2 "Reserve"` is a single constant step at brightness 2 for when the
-battery is running down.
+`Mode 2 "Glare"` is a triplet with a brightness 3 floor for the worst
+conditions. It costs about 2 hours of runtime, so use it for stretches, not
+whole rides. `Mode 3 "Peloton"` is a steady brightness 1 for group riding.
 
 ## Runtime
 
@@ -88,11 +93,30 @@ design: **a 3-hour session cannot be served by a steady bright mode** (HIGH
 gives 2 hr), but is trivially served by a low-duty pattern with full-brightness
 peaks.
 
-The cycle is 180 units, of which 20 are at full brightness — an **11% peak
-duty cycle**, comparable to STROBE (8 hr), plus an ECO-like floor (75 hr on its
-own). Combining those as parallel loads gives roughly **6–7 hours**, against a
-3-hour requirement. That margin is deliberate: it absorbs battery ageing, cold
-mornings, and starting a ride less than fully charged.
+### Estimating a pattern
+
+HIGH (40 lm for 2 hr) and LOW (10 lm for 8 hr) both work out to about **80
+lumen-hours**, so treat the battery as an 80 lm·hr budget and divide by the
+pattern's average output. Assume 7/7 on ch 1-4 is 75 lm and that brightness
+scales linearly. That second assumption is unverified, so the numbers are
+estimates.
+
+A steady floor is a constant load. Do not compare it to ECO: ECO is a flash
+mode, and its 75 hr comes from being dark most of the time. The original
+version of this doc made that mistake and predicted 5-7 hours for a pattern
+that lasted about 2.
+
+| Pattern | Cycle | Avg output | Runtime (new battery) |
+|---|---|---|---|
+| Dawn Patrol v1 (floor 2, long 150) | 210 | ~27-30 lm | ~2.7-3 hr (measured ~2) |
+| **Dawn Patrol v2 (floor 1, long 250)** | 310 | ~17-19 lm | **~4-5 hr** |
+| Glare | 170 | ~38 lm | ~2 hr |
+| Peloton (steady 1/7) | - | ~8 lm | ~10 hr |
+
+In v2 the flashes are 13% of the cycle (down from 19%), and the floor draws
+half what it did. That leaves room for battery wear and partial charges against
+a 3-hour ride. If v2 still falls short of 3 hours from a full charge, the
+battery has worn and the light needs replacing.
 
 ## The one unconfirmed number
 

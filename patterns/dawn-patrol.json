@@ -12,19 +12,20 @@
     "modes": {
       "1": {
         "name": "Dawn Patrol",
-        "cycle_units": 210,
-        "peak_duty_pct": 19,
-        "est_runtime_hr": "5-6",
-        "est_rate_hz": 1.8
+        "cycle_units": 310,
+        "peak_duty_pct": 13,
+        "est_runtime_hr": "4-5",
+        "est_rate_hz": 1.2
       },
       "2": {
         "name": "Glare",
         "cycle_units": 170,
         "peak_duty_pct": 35,
-        "est_runtime_hr": "3-3.5",
+        "est_runtime_hr": "~2",
         "est_rate_hz": 1.7
       }
-    }
+    },
+    "runtime_basis": "battery ~80 lumen-hours (HIGH 40lm x 2hr = LOW 10lm x 8hr); peak 7/7 ch1-4 = 75lm; brightness assumed linear. Old Dawn Patrol (floor 2, long 150) measured ~2hr on 2026-11-06."
   },
   "device": {
     "prodcode": 7,
@@ -41,7 +42,7 @@
       "purpose": "default daylight mode - roughly 90% of your riding",
       "delays": {
         "short": 20,
-        "long": 150
+        "long": 250
       },
       "steps": [
         {
@@ -80,15 +81,15 @@
           "note": "flash B - doublet is the hook"
         },
         {
-          "byte": "0x5E",
-          "brightness": 2,
+          "byte": "0x3E",
+          "brightness": 1,
           "delay": "long",
           "channels": [
             1,
             2,
             3
           ],
-          "note": "floor for distance judgement"
+          "note": "floor for distance judgement - dropped 2->1 for runtime"
         }
       ]
     },
@@ -220,7 +221,7 @@
       "_note": "(short, long) per mode; 255 = erased",
       "bytes": [
         20,
-        150,
+        250,
         20,
         70,
         150,
@@ -268,12 +269,12 @@
     "StepData": {
       "start": 63552,
       "end": 63807,
-      "_note": "EF 2E EF 5E | EF 2E EF 2E EF 7E | 3E",
+      "_note": "EF 2E EF 3E | EF 2E EF 2E EF 7E | 3E",
       "bytes": [
         239,
         46,
         239,
-        94,
+        62,
         239,
         46,
         239,
