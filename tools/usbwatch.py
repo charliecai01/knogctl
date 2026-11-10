@@ -21,13 +21,6 @@ SILABS_VID = 0x10C4
 # PIDs the Modemaker 2.0 bundle filters on.
 KNOWN_PIDS = {0x1AE0: "Modemaker PID 6880", 0x1A16: "Modemaker PID 6678", 0x1A9A: "Modemaker PID 6810"}
 
-DEVICE_TYPES = {
-    82: "Cobber Mini Rear",
-    83: "Cobber Mini Front",
-    90: "Cobber Mini Rear (StVZO)",
-    95: "Cobber Reflex Rear",
-    96: "Cobber Reflex Front",
-}
 
 FIELDS = (
     "idVendor", "idProduct", "USB Product Name", "USB Vendor Name",
